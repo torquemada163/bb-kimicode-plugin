@@ -1,0 +1,76 @@
+{
+  "name": "bb-plugin-kimicode",
+  "version": "0.2.3",
+  "type": "module",
+  "engines": {
+    "bb": ">=0.46.1",
+    "bbPluginSdk": ">=0.6.49"
+  },
+  "bb": {
+    "name": "Kimi Code",
+    "description": "Run Kimi Code as an independent ACP provider without changing Claude Code or Codex.",
+    "branding": {
+      "icon": "./assets/kimi.svg"
+    },
+    "server": "./server.ts",
+    "host": "./host.ts",
+    "skills": [
+      "skills"
+    ]
+  },
+  "dependencies": {
+    "@get-bb/plugin-sdk": "0.6.49",
+    "dotenv": "^17.2.3",
+    "smol-toml": "^1.9.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "bb-app": "0.46.1",
+    "better-sqlite3": "^12.11.1",
+    "cron-parser": "^5.10.2",
+    "hono": "^4.13.13",
+    "tsx": "^4.20.0",
+    "typescript": "^5.7.0"
+  },
+  "description": "Independent Kimi Code ACP provider for BB",
+  "license": "MIT",
+  "files": [
+    "server.ts",
+    "host.ts",
+    "src",
+    "skills",
+    "dist",
+    "README.md",
+    "LICENSE",
+    "scripts/smoke.ts",
+    "assets",
+    "PLUGIN_OVERVIEW.md",
+    "CHANGELOG.md",
+    "docs",
+    ".env.example"
+  ],
+  "scripts": {
+    "build": "bb plugin build",
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts && tsx test/conformance.ts",
+    "smoke": "tsx scripts/smoke.ts",
+    "check:install": "node scripts/check-git-install.mjs",
+    "check:package": "node scripts/check-package.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/torquemada163/bb-kimicode-plugin.git"
+  },
+  "homepage": "https://github.com/torquemada163/bb-kimicode-plugin#readme",
+  "bugs": {
+    "url": "https://github.com/torquemada163/bb-kimicode-plugin/issues"
+  },
+  "keywords": [
+    "bb",
+    "bb-plugin",
+    "kimi",
+    "kimi-code",
+    "acp",
+    "coding-agent"
+  ]
+}

@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+    groups:
+      dependencies:
+        patterns: ['*']
+    ignore:
+      # These pins must track the tested BB release together.
+      - dependency-name: '@get-bb/plugin-sdk'
+      - dependency-name: bb-app
