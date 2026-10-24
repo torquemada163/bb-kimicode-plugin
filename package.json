@@ -26,7 +26,7 @@
   "devDependencies": {
     "@types/node": "^22.0.0",
     "bb-app": "0.46.1",
-    "better-sqlite3": "^12.11.1",
+    "better-sqlite3": "^13.0.3",
     "cron-parser": "^5.10.2",
     "hono": "^4.13.13",
     "tsx": "^4.20.0",
