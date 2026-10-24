@@ -42,12 +42,12 @@ The plugin uses only public `@get-bb/plugin-sdk` entrypoints. `host.ts` wraps th
 1. Update `version` in `package.json` and `package-lock.json`, and add a changelog entry.
 2. Run the checks above and review the npm package with `npm pack --dry-run`.
 3. Commit and push to `main`, then tag that commit as `vX.Y.Z`.
-4. Push the tag and publish GitHub release notes from `CHANGELOG.md`.
+4. Push the tag. The Release workflow reruns CI on Linux and macOS, verifies the tag matches `package.json` and the commit is on `main`, and publishes a GitHub Release using the dated changelog entry. The installation uses Git source, so no binary download is needed.
 
 A Git URL installation tracks the default branch. Users who want a release range can install with:
 
 ```sh
-bb plugin install 'git:https://github.com/torquemada163/bb-kimicode-plugin.git@^0.2.3'
+bb plugin install 'git:https://github.com/torquemada163/bb-kimicode-plugin.git@^0.3.0'
 ```
 
 Never move an existing release tag. Generated `dist/` files are built by BB on installation and are not committed. CI verifies tests, types, the pinned SDK, and a build on macOS and Linux. Live smoke checks are manual and require a real subscription key; CI uses no credentials.

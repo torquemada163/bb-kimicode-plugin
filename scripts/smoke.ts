@@ -11,7 +11,7 @@ import { bridgeOptions, readSettings } from '../src/config.js';
 const dir = mkdtempSync(join(tmpdir(), 'bb-kimi-smoke-'));
 bridge.start?.({ pluginId: 'kimicode', dataDir: dir, tempDir: dir });
 const harness = harnessFor(bridge.handleLine);
-const providerOptions = bridgeOptions(readSettings({ envFile: resolve('.env'), executable: process.env.KIMI_EXECUTABLE ?? 'kimi' }));
+const providerOptions = bridgeOptions(readSettings({ envFile: resolve('.env'), sourceConfig: process.env.KIMI_SMOKE_SOURCE_CONFIG ?? 'auto', executable: process.env.KIMI_EXECUTABLE ?? 'kimi' }));
 let counter = 0;
 const options = { model: 'kimi-for-coding', reasoningLevel: process.env.KIMI_SMOKE_REASONING ?? 'high', permissionMode: 'accept-edits', permissionScope: 'workspace', approvalReviewer: 'user', permissionEscalation: 'deny', providerOptions };
 async function request(method: string, params: Record<string, unknown>) {
@@ -34,6 +34,8 @@ try {
   process.stderr.write(`Model catalog: ${JSON.stringify(models)}\n`);
   const available = models.models as { id: string; isDefault: boolean }[];
   options.model = process.env.KIMI_SMOKE_MODEL ?? available.find((model) => model.isDefault)?.id ?? available[0].id;
+  if (!available.some((model) => model.id === options.model)) throw new Error('Requested smoke model is missing from the ACP catalog.');
+  process.stderr.write(`Selected model: ${options.model}; thinking: ${options.reasoningLevel}\n`);
   const session = await request('thread/start', { threadId: 'kimi-smoke', cwd: dir, instructionMode: 'append', options });
   process.stderr.write('Session started.\n');
   const providerThreadId = session.providerThreadId;

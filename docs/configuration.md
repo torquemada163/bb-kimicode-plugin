@@ -35,7 +35,7 @@ Kimi uses a plugin-owned `kimi-home` under the host bridge's data directory, kee
 | A model is listed but the API rejects it | Model availability depends on the account, endpoint region, and membership tier. Imported third-party providers use their own credentials. |
 | A connection change does not affect a running conversation | Start a new thread so the CLI process gets the new credentials and config. |
 
-`sourceConfig=auto` imports the host CLI's provider/model tables. Set it to `none` to use only the four subscription model presets. When importing another provider, credentials in its config are copied to the private host snapshot; a referenced `api_key_env` must already be available on that host. External OAuth stores are not copied.
+`sourceConfig=auto` imports the host CLI's provider/model tables. Set it to `none` to use only the six subscription model presets. When importing another provider, credentials in its config are copied to the private host snapshot; a referenced `api_key_env` must already be available on that host. External OAuth stores are not copied.
 
 The plugin accepts BB's inherited `medium` as `high`, matching the documented Kimi Code API mapping. It forwards explicit Low / High / Max selections unchanged. Kimi Code HighSpeed has fixed Thinking ON; the CLI currently represents that with one High entry.
 

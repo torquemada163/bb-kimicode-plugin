@@ -42,7 +42,7 @@ max_context_size = 1048576
     const snapshotPath = join(dir, 'kimi-home/config.toml');
     const text = readFileSync(snapshotPath, 'utf8');
     const snapshot = parse(text) as any;
-    assert.equal(Object.keys(snapshot.models).length, 5);
+    assert.equal(Object.keys(snapshot.models).length, 7);
     assert.deepEqual(snapshot.models['kimi-code/k3'].support_efforts, ['low', 'high', 'max']);
     assert.equal(snapshot.models['kimi-code/k3'].max_context_size, 1048576);
     assert.equal(snapshot.default_model, 'kimi-code/k3');
@@ -64,14 +64,37 @@ max_context_size = 1048576
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('API-key-only setup exposes all four subscription models and accepts API IDs as default', () => {
+test('API-key-only setup exposes all six subscription models and accepts API IDs as default', () => {
   const dir = mkdtempSync(join(tmpdir(), 'bb-kimi-catalog-'));
   try {
     const envFile = join(dir, '.env');
     writeFileSync(envFile, 'KIMI_API_KEY=test-key\n');
     const prepared = prepareHostOptions(bridgeOptions(readSettings({ envFile, sourceConfig: 'none', model: 'k3-256k' })), dir);
     const snapshot = parse(readFileSync(join(dir, 'kimi-home/config.toml'), 'utf8')) as any;
-    assert.equal(Object.keys(snapshot.models).length, 4);
+    assert.equal(Object.keys(snapshot.models).length, 6);
     assert.equal(prepared.kimiDefaultModel, 'kimi-code/k3-256k');
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+
+test('K3.1 Pro presets support thinking-only, native multimodal tools, and API-ID selection', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bb-kimi-k31-'));
+  try {
+    const envFile = join(dir, '.env');
+    writeFileSync(envFile, 'KIMI_API_KEY=test-key\n');
+    for (const model of ['k3.1-pro', 'k3.1-pro-highspeed']) {
+      const prepared = prepareHostOptions(bridgeOptions(readSettings({ envFile, sourceConfig: 'none', model })), dir);
+      const snapshot = parse(readFileSync(join(dir, 'kimi-home/config.toml'), 'utf8')) as any;
+      const alias = `kimi-code/${model}`;
+      assert.equal(prepared.kimiDefaultModel, alias);
+      assert.equal(snapshot.models[alias].model, model);
+      assert.equal(snapshot.models[alias].max_context_size, 1048576);
+      assert.deepEqual(snapshot.models[alias].support_efforts, ['low', 'high', 'max']);
+      assert.equal(snapshot.models[alias].default_effort, 'high');
+      for (const capability of ['thinking', 'always_thinking', 'image_in', 'video_in', 'tool_use', 'dynamically_loaded_tools']) {
+        assert.ok(snapshot.models[alias].capabilities.includes(capability));
+      }
+      assert.equal(snapshot.models[alias].provider, 'managed:kimi-code');
+    }
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

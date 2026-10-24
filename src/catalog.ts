@@ -11,13 +11,17 @@ const table = (value: unknown): Table => value !== null && typeof value === 'obj
 // Offline defaults for API-key-only installations; native metadata takes precedence.
 export function subscriptionModels(): Table {
   return Object.fromEntries([
+    ['k3.1-pro', 'K3.1 Pro', 1048576],
+    ['k3.1-pro-highspeed', 'K3.1 Pro Highspeed', 1048576],
     ['kimi-for-coding', 'K2.8 Preview', 1048576],
     ['kimi-for-coding-highspeed', 'K2.7 Code Highspeed', 262144],
     ['k3', 'K3', 1048576],
     ['k3-256k', 'K3-256k', 262144],
   ].map(([model, display_name, max_context_size]) => [`kimi-code/${model}`, {
     provider: 'managed:kimi-code', model, display_name, max_context_size,
-    capabilities: ['thinking', 'image_in', 'tool_use'],
+    capabilities: ['thinking', 'image_in', 'tool_use',
+      ...(model === 'k3.1-pro' || model === 'k3.1-pro-highspeed'
+        ? ['always_thinking', 'video_in', 'dynamically_loaded_tools'] : [])],
     ...(model === 'kimi-for-coding-highspeed' ? {} : { support_efforts: ['low', 'high', 'max'], default_effort: 'high' }),
   }]));
 }

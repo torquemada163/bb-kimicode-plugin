@@ -11,7 +11,7 @@ Run **Kimi Code** alongside your existing coding agents in [bb](https://getbb.ap
 ## What you get
 
 - A separate **Kimi Code** entry in bb's provider picker, with the official Kimi mark.
-- K3, K3-256k, K2.8 Preview, and K2.7 Code HighSpeed, subject to your subscription.
+- K3.1 Pro, K3.1 Pro Highspeed, K3, K3-256k, K2.8 Preview, and K2.7 Code HighSpeed, subject to your subscription.
 - Low / High / Max thinking levels on models that support them.
 - Your existing Kimi CLI provider/model catalog, including separately configured API providers.
 - Multi-turn conversations and session restore through ACP.
@@ -36,7 +36,7 @@ BB downloads the source, installs its runtime dependencies, and builds the plugi
 ### Requirements
 
 - **bb 0.46.1+**, providing Plugin SDK 0.6.49+.
-- The official [Kimi Code CLI](https://www.kimi.com/code/docs/en/kimi-code-cli/guides/getting-started.html), **2.2+**, on the machine that runs your agents. The legacy Python `kimi-cli` is not supported. Verified locally with CLI 2.3.0.
+- The official [Kimi Code CLI](https://www.kimi.com/code/docs/en/kimi-code-cli/guides/getting-started.html), **2.2+**, on the machine that runs your agents. The legacy Python `kimi-cli` is not supported. Verified locally with CLI 2.3.1.
 - A **Kimi Code subscription API key**. Moonshot Platform keys and billing are separate.
 
 The plugin is tested on macOS and Linux. Install the CLI and credentials on the **execution host**, including when you access bb through a remote browser.
@@ -74,12 +74,16 @@ Start a new thread, choose **Kimi Code**, then select your model and thinking le
 
 | Kimi Code model | API ID | Thinking |
 | --- | --- | --- |
+| K3.1 Pro | `k3.1-pro` | Low / High / Max; thinking required |
+| K3.1 Pro Highspeed | `k3.1-pro-highspeed` | Low / High / Max; thinking required |
 | K3 | `k3` | Low / High / Max |
 | K3-256k | `k3-256k` | Low / High / Max |
 | K2.8 Preview | `kimi-for-coding` | Low / High / Max |
 | K2.7 Code HighSpeed | `kimi-for-coding-highspeed` | Thinking ON; no adjustable effort |
 
 Model availability and context limits depend on your membership. BB uses the aliases and capabilities returned by the CLI, such as `kimi-code/k3`; do not replace these with display names. See [Kimi's model documentation](https://www.kimi.com/code/docs/en/kimi-code/models.html).
+
+Start a **new thread** for K3.1 Pro models rather than switching an existing K3/K2.x conversation. Both variants require thinking enabled and support up to 1M context, subject to your subscription. Use CLI 2.3.1+ for the updated native catalog.
 
 BB's inherited `medium` setting is translated to `high`, following Kimi's documented API mapping. HighSpeed currently appears in ACP with a single High entry, representing its fixed/default Thinking behavior.
 

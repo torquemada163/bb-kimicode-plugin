@@ -13,7 +13,7 @@ Settings: `executable` (official Kimi Code CLI 2.2+, default `kimi`), `envFile` 
 
 The host reads dotenv as data and passes the key only to its Kimi child. Other dotenv entries are ignored. Kimi uses a plugin-owned home. Paths apply on the execution machine, not the browser; every remote host needs its CLI and credentials at the configured paths.
 
-Select a model and supported thinking level from the ACP catalog in the composer. The isolated catalog preserves the source CLI aliases and metadata; API-only setups get four subscription models. Third-party providers retain their own credentials and billing. The subscription key is never sent to their endpoints. Only provider/model tables are copied; the original config is unchanged. Existing `__kimi_env_model__` selections migrate to the configured default. Restart/resume the CLI session after changing credentials or API model. Usage quotas, explicit compaction, and native BB forks are not exposed in this version.
+Select a model and supported thinking level from the ACP catalog in the composer. The isolated catalog preserves the source CLI aliases and metadata; API-only setups get six subscription models. Third-party providers retain their own credentials and billing. The subscription key is never sent to their endpoints. Only provider/model tables are copied; the original config is unchanged. Existing `__kimi_env_model__` selections migrate to the configured default. Restart/resume the CLI session after changing credentials or API model. Usage quotas, explicit compaction, and native BB forks are not exposed in this version.
 
 See README.md in the plugin for installation and development. Do not print credentials while troubleshooting.
 
