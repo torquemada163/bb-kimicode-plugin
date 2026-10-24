@@ -53,3 +53,7 @@ bb plugin install 'git:https://github.com/torquemada163/bb-kimicode-plugin.git@^
 Never move an existing release tag. Generated `dist/` files are built by BB on installation and are not committed. CI verifies tests, types, the pinned SDK, and a build on macOS and Linux. Live smoke checks are manual and require a real subscription key; CI uses no credentials.
 
 The SDK is intentionally a production dependency: host bridge imports must remain available when BB installs from Git with `--omit=dev`. BB 0.46.1’s generic `plugin types --check` asks to move it to devDependencies; do not apply that change to this provider plugin. The clean Git-install build checks the required dependency layout instead.
+
+## Dependency updates
+
+Dependabot checks npm dependencies and GitHub Actions monthly. Minor and patch updates are grouped; major updates arrive as individual PRs for separate review. Node type declarations remain on the Node 22 major used by CI. The Plugin SDK and `bb-app` stay pinned and are updated together manually after compatibility testing. No dependency PRs are merged automatically.
