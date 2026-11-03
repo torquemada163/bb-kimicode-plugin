@@ -30,7 +30,7 @@
     "cron-parser": "^5.10.2",
     "hono": "^4.13.13",
     "tsx": "^4.20.0",
-    "typescript": "^5.7.0"
+    "typescript": "^7.0.2"
   },
   "description": "Independent Kimi Code ACP provider for BB",
   "license": "MIT",
