@@ -9,7 +9,7 @@ npm run check:install
 npm run check:package
 ```
 
-Tests cover full catalog snapshots, provider credential separation, unchanged source files, snapshot permissions, native thinking metadata, dotenv handling, host-only secret injection, parent-environment preservation, missing/oversized/malformed credentials, and the SDK's canonical bridge conformance suite against an offline ACP fixture. These tests use no real key or model calls.
+Tests cover model additions and retirement, context/thinking metadata updates, subscription-only defaults, explicit API opt-in, unchanged source files, snapshot permissions, failed/partial catalog refreshes, stale timestamps, key-scoped caches, duplicate-request coalescing, manual refresh routing, service disposal, dotenv handling, host-only secret injection, and the SDK's canonical bridge conformance suite against an offline ACP fixture. They also verify rejection of unavailable/API models before CLI launch. These tests use no real key or model calls.
 
 For an optional real request using `.env` in the current directory:
 
@@ -24,13 +24,24 @@ The provider bridge SDK is a production dependency so Git installations can buil
 
 The plugin uses only public `@get-bb/plugin-sdk` entrypoints. `host.ts` wraps the published ACP bridge to resolve host-local credentials immediately before dispatch. `server.ts` defines the settings and provider registration. Headless: no frontend bundle is needed.
 
+For an offline HTTP error/recovery smoke using the real CLI:
+
+```sh
+npm run build
+KIMI_EXECUTABLE=/absolute/path/to/kimi npm run smoke:errors
+```
+
+This seeds a fixture subscription cache and runs an explicit external API fixture on loopback with fake credentials. It checks HTTP 429 with a one-hour Retry-After, the error reported to BB, and a successful next turn in the same session. It makes no production model calls. On macOS a restricted process sandbox may break Kimi's filesystem watchers with `EMFILE`; run the real CLI smoke on the authorized execution host.
+
 ## Repository layout
 
 | Path | Purpose |
 | --- | --- |
 | `server.ts` | Provider registration and settings |
 | `host.ts` | Host bridge wrapper and request normalization |
-| `src/catalog.ts` | Private, isolated snapshot of Kimi provider/model tables |
+| `src/catalog.ts` | Labeled subscription snapshot, optional external API import, and BB picker models |
+| `src/subscription-catalog.ts` | Authenticated live catalog, validation, per-account cache, and refresh policy |
+| `src/acp-guard.ts` | Host-local ACP launcher that surfaces hidden CLI errors |
 | `src/credentials.ts` | Host-only dotenv loading and child environment |
 | `src/reasoning.ts` | BB-to-Kimi reasoning compatibility |
 | `assets/` | Official K glyph and source attribution |

@@ -6,8 +6,9 @@ import { join } from 'node:path';
 import { parse } from 'smol-toml';
 import { bridgeOptions, readSettings } from '../src/config.js';
 import { prepareHostOptions } from '../src/credentials.js';
+import { seedSubscription } from './fixtures/subscription.js';
 
-test('catalog preserves native aliases/efforts and keeps subscription and external provider credentials separate', () => {
+test('catalog keeps subscription and optional external provider credentials separate without changing the source', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'bb-kimi-catalog-'));
   const envFile = join(dir, '.env');
   const sourceConfig = join(dir, 'source.toml');
@@ -37,8 +38,9 @@ max_context_size = 1048576
   try {
     writeFileSync(envFile, 'KIMI_API_KEY=subscription-test-key\n');
     writeFileSync(sourceConfig, original);
-    const options = bridgeOptions(readSettings({ envFile, sourceConfig }));
-    const prepared = prepareHostOptions(options, dir);
+    await seedSubscription(dir, 'subscription-test-key');
+    const options = bridgeOptions(readSettings({ envFile, sourceConfig, includeExternalModels: true }));
+    const prepared = await prepareHostOptions(options, dir);
     const snapshotPath = join(dir, 'kimi-home/config.toml');
     const text = readFileSync(snapshotPath, 'utf8');
     const snapshot = parse(text) as any;
@@ -59,17 +61,18 @@ max_context_size = 1048576
     assert.equal(readFileSync(sourceConfig, 'utf8'), original);
     // An unchanged snapshot does not trigger the CLI's config watcher on every turn.
     const modified = statSync(snapshotPath).mtimeMs;
-    prepareHostOptions(options, dir);
+    await prepareHostOptions(options, dir);
     assert.equal(statSync(snapshotPath).mtimeMs, modified);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });
 
-test('API-key-only setup exposes all six subscription models and accepts API IDs as default', () => {
+test('API-key-only setup uses subscription catalog metadata and accepts model IDs as default', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'bb-kimi-catalog-'));
   try {
     const envFile = join(dir, '.env');
     writeFileSync(envFile, 'KIMI_API_KEY=test-key\n');
-    const prepared = prepareHostOptions(bridgeOptions(readSettings({ envFile, sourceConfig: 'none', model: 'k3-256k' })), dir);
+    await seedSubscription(dir, 'test-key');
+    const prepared = await prepareHostOptions(bridgeOptions(readSettings({ envFile, sourceConfig: 'none', model: 'k3-256k' })), dir);
     const snapshot = parse(readFileSync(join(dir, 'kimi-home/config.toml'), 'utf8')) as any;
     assert.equal(Object.keys(snapshot.models).length, 6);
     assert.equal(prepared.kimiDefaultModel, 'kimi-code/k3-256k');
@@ -77,13 +80,14 @@ test('API-key-only setup exposes all six subscription models and accepts API IDs
 });
 
 
-test('K3.1 Pro presets support thinking-only, native multimodal tools, and API-ID selection', () => {
+test('K3.1 Pro catalog metadata supports thinking-only, native multimodal tools, and model-ID selection', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'bb-kimi-k31-'));
   try {
     const envFile = join(dir, '.env');
     writeFileSync(envFile, 'KIMI_API_KEY=test-key\n');
+    await seedSubscription(dir, 'test-key');
     for (const model of ['k3.1-pro', 'k3.1-pro-highspeed']) {
-      const prepared = prepareHostOptions(bridgeOptions(readSettings({ envFile, sourceConfig: 'none', model })), dir);
+      const prepared = await prepareHostOptions(bridgeOptions(readSettings({ envFile, sourceConfig: 'none', model })), dir);
       const snapshot = parse(readFileSync(join(dir, 'kimi-home/config.toml'), 'utf8')) as any;
       const alias = `kimi-code/${model}`;
       assert.equal(prepared.kimiDefaultModel, alias);

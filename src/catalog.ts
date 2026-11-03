@@ -4,30 +4,13 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { parse, stringify } from 'smol-toml';
 import type { KimiSettings } from './config.js';
+import type { SubscriptionCatalog } from './subscription-catalog.js';
 
 type Table = Record<string, any>;
 const table = (value: unknown): Table => value !== null && typeof value === 'object' && !Array.isArray(value) ? value as Table : {};
 
-// Offline defaults for API-key-only installations; native metadata takes precedence.
-export function subscriptionModels(): Table {
-  return Object.fromEntries([
-    ['k3.1-pro', 'K3.1 Pro', 1048576],
-    ['k3.1-pro-highspeed', 'K3.1 Pro Highspeed', 1048576],
-    ['kimi-for-coding', 'K2.8 Preview', 1048576],
-    ['kimi-for-coding-highspeed', 'K2.7 Code Highspeed', 262144],
-    ['k3', 'K3', 1048576],
-    ['k3-256k', 'K3-256k', 262144],
-  ].map(([model, display_name, max_context_size]) => [`kimi-code/${model}`, {
-    provider: 'managed:kimi-code', model, display_name, max_context_size,
-    capabilities: ['thinking', 'image_in', 'tool_use',
-      ...(model === 'k3.1-pro' || model === 'k3.1-pro-highspeed'
-        ? ['always_thinking', 'video_in', 'dynamically_loaded_tools'] : [])],
-    ...(model === 'kimi-for-coding-highspeed' ? {} : { support_efforts: ['low', 'high', 'max'], default_effort: 'high' }),
-  }]));
-}
-
 /** Snapshot provider/model tables only. Never modify the user's standalone CLI config. */
-export function writeHostCatalog(config: KimiSettings, dataDir: string) {
+export function writeHostCatalog(config: KimiSettings, dataDir: string, subscription: SubscriptionCatalog) {
   let source: Table = {};
   const sourcePath = config.sourceConfig === 'auto'
     ? join(process.env.KIMI_CODE_HOME || join(homedir(), '.kimi-code'), 'config.toml')
@@ -38,28 +21,35 @@ export function writeHostCatalog(config: KimiSettings, dataDir: string) {
       catch { throw new Error('Cannot read the source Kimi config. Check sourceConfig and TOML syntax on the execution host.'); }
     }
   }
-  const providers: Table = structuredClone(table(source.providers));
-  const models: Table = { ...subscriptionModels(), ...structuredClone(table(source.models)) };
-  const subscriptionProvider = {
-    type: 'kimi', base_url: config.baseUrl, api_key_env: 'BB_KIMI_CODE_API_KEY',
-  };
-  // Replace managed OAuth credentials with the explicitly supplied subscription API key.
-  for (const [name, provider] of Object.entries(providers)) {
-    const base = table(provider).base_url;
-    if (name === 'managed:kimi-code' || (typeof base === 'string' && /^https:\/\/api\.kimi\.(com|ai)\/coding(?:\/|$)/.test(base))) {
-      providers[name] = { ...subscriptionProvider };
+  const providers: Table = Object.create(null);
+  const models: Table = Object.assign(Object.create(null), structuredClone(subscription.models));
+  if (config.includeExternalModels) {
+    for (const [alias, value] of Object.entries(table(source.models))) {
+      const model = table(value);
+      const provider = table(table(source.providers)[model.provider]);
+      const base = provider.base_url;
+      if (model.provider === 'managed:kimi-code' || alias.startsWith('kimi-code/') ||
+        (typeof base === 'string' && /^https:\/\/api\.kimi\.(com|ai)\/coding(?:\/|$)/.test(base))) continue;
+      if (typeof model.provider !== 'string' || !Object.keys(provider).length) continue;
+      providers[model.provider] = structuredClone(provider);
+      models[alias] = { ...structuredClone(model), display_name: `${model.display_name ?? model.model} · API (${model.provider})` };
     }
   }
-  providers['managed:kimi-code'] = { ...subscriptionProvider };
+  providers['managed:kimi-code'] = {
+    type: 'kimi', base_url: config.baseUrl, api_key_env: 'BB_KIMI_CODE_API_KEY',
+  };
   for (const value of Object.values(models)) {
     const model = table(value);
     if (model.provider === 'managed:kimi-code' && config.maxContextSize !== 'auto') model.max_context_size = Number(config.maxContextSize);
   }
   const requested = config.model === 'auto' ? source.default_model : config.model;
-  const defaultModel = typeof requested === 'string' && requested in models ? requested
+  const defaultModel = typeof requested === 'string' && Object.hasOwn(models, requested) ? requested
     : Object.keys(models).find((name) => models[name].provider === 'managed:kimi-code' && models[name].model === requested)
-      ?? 'kimi-code/kimi-for-coding';
-  const snapshot = { default_model: defaultModel, providers, models };
+      ?? Object.keys(subscription.models)[0] ?? '';
+  const labeledModels = Object.fromEntries(Object.entries(models).map(([alias, value]) => [alias,
+    alias.startsWith('kimi-code/') ? { ...value, display_name: `${value.display_name} · подписка Kimi Code` } : value]));
+  const snapshot = { default_model: defaultModel, providers, models: labeledModels,
+    loop_control: { max_attempts_per_step: 1, compaction_max_attempts: 1 } };
   const home = join(dataDir, 'kimi-home');
   mkdirSync(home, { recursive: true, mode: 0o700 });
   const path = join(home, 'config.toml');
@@ -70,5 +60,23 @@ export function writeHostCatalog(config: KimiSettings, dataDir: string) {
     renameSync(temporary, path);
   }
   chmodSync(path, 0o600);
-  return { home, defaultModel };
+  return { home, defaultModel, models: labeledModels, subscription };
+}
+
+export function pickerModels(catalog: ReturnType<typeof writeHostCatalog>) {
+  return Object.entries(catalog.models).map(([id, model]) => {
+    const thinking = model.capabilities?.includes('thinking');
+    const efforts: string[] = model.support_efforts?.length ? model.support_efforts : [thinking ? 'high' : 'off'];
+    const stale = model.provider === 'managed:kimi-code' && catalog.subscription.stale;
+    return {
+      id, model: id, displayName: model.display_name + (stale ? ' · кеш' : ''),
+      description: model.provider === 'managed:kimi-code'
+        ? `Каталог подписки от ${new Date(catalog.subscription.fetchedAt).toISOString()}.` +
+          (stale ? ' Обновление недоступно; показан сохранённый список.' : '')
+        : `Отдельный API: ${model.provider}.`,
+      isDefault: id === catalog.defaultModel,
+      supportedReasoningEfforts: efforts.map((reasoningEffort) => ({ reasoningEffort, description: reasoningEffort })),
+      defaultReasoningEffort: efforts.includes(model.default_effort) ? model.default_effort : efforts[0],
+    };
+  });
 }

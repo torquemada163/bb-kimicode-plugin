@@ -11,9 +11,9 @@ Run **Kimi Code** alongside your existing coding agents in [bb](https://getbb.ap
 ## What you get
 
 - A separate **Kimi Code** entry in bb's provider picker, with the official Kimi mark.
-- K3.1 Pro, K3.1 Pro Highspeed, K3, K3-256k, K2.8 Preview, and K2.7 Code HighSpeed, subject to your subscription.
+- A live catalog of models available through your Kimi Code subscription, with clear subscription labels.
 - Low / High / Max thinking levels on models that support them.
-- Your existing Kimi CLI provider/model catalog, including separately configured API providers.
+- Optional separately configured API providers, with explicit API labels and separate billing.
 - Multi-turn conversations and session restore through ACP.
 - An isolated CLI home, with host-local credentials and an unchanged standalone Kimi config.
 
@@ -36,7 +36,7 @@ BB downloads the source, installs its runtime dependencies, and builds the plugi
 ### Requirements
 
 - **bb 0.46.1+**, providing Plugin SDK 0.6.49+.
-- The official [Kimi Code CLI](https://www.kimi.com/code/docs/en/kimi-code-cli/guides/getting-started.html), **2.2+**, on the machine that runs your agents. The legacy Python `kimi-cli` is not supported. Verified locally with CLI 2.3.1.
+- The official [Kimi Code CLI](https://www.kimi.com/code/docs/en/kimi-code-cli/guides/getting-started.html), **2.2+**, on the machine that runs your agents. The legacy Python `kimi-cli` is not supported. Verified locally with CLI 2.4.0.
 - A **Kimi Code subscription API key**. Moonshot Platform keys and billing are separate.
 
 The plugin is tested on macOS and Linux. Install the CLI and credentials on the **execution host**, including when you access bb through a remote browser.
@@ -81,24 +81,36 @@ Start a new thread, choose **Kimi Code**, then select your model and thinking le
 | K2.8 Preview | `kimi-for-coding` | Low / High / Max |
 | K2.7 Code HighSpeed | `kimi-for-coding-highspeed` | Thinking ON; no adjustable effort |
 
-Model availability and context limits depend on your membership. BB uses the aliases and capabilities returned by the CLI, such as `kimi-code/k3`; do not replace these with display names. See [Kimi's model documentation](https://www.kimi.com/code/docs/en/kimi-code/models.html).
+The table above gives examples, not a fixed catalog. The plugin reads `/models` from your configured Kimi Code endpoint using your subscription key on the execution host. Availability, context windows, capabilities, names, and thinking efforts come from that response. There is no built-in fallback list that can resurrect retired models. BB uses stable aliases such as `kimi-code/k3.1-pro`, with labels such as **K3.1 Pro · подписка Kimi Code**.
 
 Start a **new thread** for K3.1 Pro models rather than switching an existing K3/K2.x conversation. Both variants require thinking enabled and support up to 1M context, subject to your subscription. Use CLI 2.3.1+ for the updated native catalog.
 
 BB's inherited `medium` setting is translated to `high`, following Kimi's documented API mapping. HighSpeed currently appears in ACP with a single High entry, representing its fixed/default Thinking behavior.
 
-By default, the plugin imports provider/model tables from the host's existing Kimi config into its private CLI home. Extra models such as `moonshot-cn/kimi-k3` retain their own provider credentials and billing. To show subscription models only:
+The catalog refreshes on plugin startup and every 15 minutes. Refresh it manually with:
 
 ```sh
-bb plugin config kimicode set sourceConfig none
+bb kimicode models refresh
+# Optional: target another execution host by ID.
+bb kimicode models refresh --machine host_example
 ```
+
+If an update fails, the last successful catalog remains available with a **кеш** label and its timestamp in the model description. A cold setup needs one successful catalog fetch. A removed or disabled model is rejected before starting a request; the plugin preserves the thread and asks you to choose a model instead of switching API routes.
+
+Only subscription models are listed and accepted by default. To explicitly include separate API providers from the host Kimi config:
+
+```sh
+bb plugin config kimicode set includeExternalModels true
+```
+
+These entries carry an **API (provider-id)** label and retain their own credentials and billing. `sourceConfig=none` disables that import altogether. Native subscription model entries do not override the live subscription catalog.
 
 [All settings, credential handling, and troubleshooting →](docs/configuration.md)
 
 ## Scope and limitations
 
 - The plugin registers only `kimi-code`; other bb providers are not reconfigured.
-- The subscription key is read on the execution host and passed directly to the Kimi child process. The source config is never modified. See [isolation and secrets](docs/configuration.md#isolation-and-secrets).
+- The subscription key is read on the execution host, used there to fetch the subscription catalog, and passed directly to the Kimi child process. The source config is never modified. See [isolation and secrets](docs/configuration.md#isolation-and-secrets).
 - Usage quota reporting, manual compaction, and native bb forks are not exposed yet.
 - Permissions use bb's shared ACP adapter. The plugin does not pass `--auto` or `--yolo`; permission modes are not an OS sandbox.
 - One set of executable and credentials paths applies across hosts. Each execution host needs the corresponding files.

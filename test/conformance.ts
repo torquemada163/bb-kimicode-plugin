@@ -9,11 +9,13 @@ import {
 } from '@get-bb/plugin-sdk/provider-bridge/testing';
 import { experimental_providerBridge as bridge } from '../host.js';
 import { bridgeOptions, readSettings } from '../src/config.js';
+import { seedSubscription } from './fixtures/subscription.js';
 
 async function main() {
   const dir = mkdtempSync(join(tmpdir(), 'bb-kimi-conformance-'));
   const envFile = join(dir, '.env');
   writeFileSync(envFile, 'KIMI_API_KEY=fixture-key\n');
+  await seedSubscription(dir, 'fixture-key');
   const options = bridgeOptions(readSettings({ sourceConfig: 'none', envFile, executable: resolve('test/fixtures/acp-agent.mjs') }));
   const output = capture();
   bridge.start?.({ pluginId: 'kimicode', dataDir: dir, tempDir: dir });

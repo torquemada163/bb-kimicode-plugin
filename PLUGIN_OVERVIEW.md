@@ -4,7 +4,8 @@ Run Kimi Code alongside your other coding agents in bb, with a separate provider
 
 - K3.1 Pro, K3.1 Pro Highspeed, K3, K3-256k, K2.8 Preview, and K2.7 Code HighSpeed through the official Kimi Code CLI.
 - Low, High, and Max thinking where the selected model supports them.
-- Existing Kimi CLI provider/model entries, with a subscription-only option.
+- A live subscription catalog with explicit subscription labels, 15-minute refresh, and a last-known-good cache.
+- Separate API providers only when explicitly enabled, with API labels identifying their billing route.
 - Multi-turn conversations and session restore over ACP.
 - An isolated CLI home and a host-local API key file, keeping your standalone Kimi config unchanged.
 

@@ -10,6 +10,7 @@ export type KimiSettings = {
   baseUrl: string;
   model: string;
   maxContextSize: string;
+  includeExternalModels: boolean;
 };
 
 export function readSettings(values: Readonly<Record<string, unknown>>): KimiSettings {
@@ -22,6 +23,7 @@ export function readSettings(values: Readonly<Record<string, unknown>>): KimiSet
     baseUrl: string('baseUrl', DEFAULT_BASE_URL),
     model: string('model', 'auto'),
     maxContextSize: string('maxContextSize', 'auto'),
+    includeExternalModels: values.includeExternalModels === true,
   };
   if (config.envFile && !isAbsolute(config.envFile)) {
     throw new Error('Kimi Code: envFile must be an absolute path on the execution host.');
@@ -47,10 +49,11 @@ export function launchSpec(config: KimiSettings): AcpLaunchSpec {
   };
 }
 
-export function bridgeOptions(config: KimiSettings) {
+export function bridgeOptions(config: KimiSettings, refreshAfter = 0) {
   return {
     acpDialect: 'acp',
     acpLaunchSpec: { ...launchSpec(config) },
     kimiConfig: { ...config },
+    kimiCatalogRefreshAfter: refreshAfter,
   };
 }

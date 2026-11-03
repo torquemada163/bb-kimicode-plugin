@@ -1,4 +1,4 @@
-import { mkdtempSync } from 'node:fs';
+import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -53,5 +53,7 @@ try {
 } catch (error) {
   process.stderr.write(String(error) + '\n'); process.exitCode = 1;
 } finally {
-  harness.restore(); process.exit(process.exitCode ?? 0);
+  harness.restore();
+  rmSync(dir, { recursive: true, force: true });
+  process.exit(process.exitCode ?? 0);
 }
