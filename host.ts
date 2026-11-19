@@ -3,13 +3,17 @@ import { experimental_defineProviderBridge } from '@get-bb/plugin-sdk/provider-b
 import { normalizeReasoningOptions } from './src/reasoning.js';
 import { asRecord, prepareHostOptions } from './src/credentials.js';
 import { pickerModels } from './src/catalog.js';
+import { createUsageHandler } from './src/usage-command.js';
 
 let hostDataDir: string | undefined;
 let closing = false;
 const stopped = new Map<string, number>();
+let usage = createUsageHandler();
 
 export const experimental_providerBridge = experimental_defineProviderBridge({
   start(context) {
+    usage.close();
+    usage = createUsageHandler();
     hostDataDir = context.dataDir;
     closing = false;
     acp.start?.(context);
@@ -21,10 +25,11 @@ export const experimental_providerBridge = experimental_defineProviderBridge({
     const params = asRecord(message.params);
     const threadId = typeof params.threadId === 'string' ? params.threadId : undefined;
     if (message.method === 'thread/stop') {
-      if (threadId) stopped.set(threadId, (stopped.get(threadId) ?? 0) + 1);
+      if (threadId) { stopped.set(threadId, (stopped.get(threadId) ?? 0) + 1); usage.stop(threadId); }
       acp.handleLine(line);
       return;
     }
+    if (!closing && usage.handle(message)) return;
     const generation = threadId ? stopped.get(threadId) ?? 0 : 0;
     const execution = asRecord(params.options);
     const owner = 'providerOptions' in execution ? execution : params;
@@ -67,7 +72,7 @@ export const experimental_providerBridge = experimental_defineProviderBridge({
     normalizeReasoningOptions(execution);
     acp.handleLine(JSON.stringify(message));
   },
-  onClose: () => { closing = true; acp.onClose?.(); },
-  onSigterm: () => { closing = true; acp.onSigterm?.(); },
-  onSigint: () => { closing = true; acp.onSigint?.(); },
+  onClose: () => { closing = true; usage.close(); acp.onClose?.(); },
+  onSigterm: () => { closing = true; usage.close(); acp.onSigterm?.(); },
+  onSigint: () => { closing = true; usage.close(); acp.onSigint?.(); },
 });

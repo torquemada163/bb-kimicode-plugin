@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased
+
+## 0.5.0 — 2026-11-19
+
+### Subscription limits in bb
+
+- See your Kimi Code allowances in the sidebar **Provider usage → Kimi Code** panel and **Settings → Usage limits**, with quota bars, usage percentages, and reset countdowns.
+- Send `/usage` as a standalone message for a text report with used/remaining percentages and reset times in UTC. No model request is made; type the command directly, as it is not listed in ACP's command menu.
+- Read the actual five-hour, weekly, or monthly windows returned by the subscription API. Quotas are shared across the account and are separate from thread context and external API billing.
+- Keep credentials on the execution host. Handle authentication failures, unavailable hosts, malformed responses, cancellation, and refresh requests without inventing quota values.
+
+### ACP reply reliability
+
+- Prevent the native background-task/cron execution path that loses replies over Kimi ACP ([upstream #4109](https://github.com/MoonshotAI/kimi-code/issues/4109)). Disable native task tools, cron, and automatic shell detachment on timeout in the isolated plugin config.
+- Keep ordinary commands and foreground subagents available. Use **BB terminals** for persistent browsers, dev servers, and observers. Standalone Kimi configuration stays unchanged.
+- Add a real-CLI loopback regression for rejected background work, foreground timeout, visible follow-ups, and stop/resume, plus an independent reproduction of the upstream bug.
+
+### After updating
+
+Stop and resume an existing Kimi thread, or create a new one, so its CLI loads the background-task policy. Already-running native background processes are not migrated automatically. Open the chart icon at the bottom of the sidebar and select **Kimi Code** to view subscription limits.
+
+### Validation
+
+- 25 offline tests, 17 SDK bridge conformance checks, and the host catalog guard.
+- TypeScript, build, clean Git-install build without development dependencies, and package content checks.
+- Real subscription metadata verified through the built bridge and the live BB sidebar; no model call is required for quota reporting.
+- Background-task and HTTP 429 recovery regressions previously verified locally with Kimi Code CLI 2.4.0 against a fake loopback API. The original user browser scenario remains unverified; the workaround does not implement autonomous ACP event delivery.
+
 ## 0.4.0 — 2026-11-03
 
 - Fetch subscription models and metadata directly from the authenticated Kimi Code `/models` endpoint; remove the fixed six-model runtime catalog.

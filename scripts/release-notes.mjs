@@ -33,17 +33,7 @@ To install this exact release:
 bb plugin install git:${repository}.git@${tag}
 \`\`\`
 
-The picker now shows **Kimi Code subscription models only** by default, with explicit subscription labels. Choose **K3.1 Pro · подписка Kimi Code** for the subscription route. Existing separate API selections require an explicit choice: select a subscription model, or enable \`includeExternalModels\` to keep using that API provider with its own billing.
-
-The catalog refreshes automatically every 15 minutes. Run \`bb kimicode models refresh\` for an immediate update. Names, model availability, context windows, and thinking efforts come from the subscription endpoint; failed updates keep the last successful catalog with a cache label.
-
-## Validation
-
-- TypeScript checks, offline regression tests, and published SDK bridge conformance.
-- Clean Git-install build without development dependencies, plus package content checks.
-- Real K3.1 Pro subscription replies verified locally with Kimi Code CLI 2.4.0 in Low and High modes.
-- A local API fixture verified visible HTTP 429 errors and recovery in the same CLI session.
-- Manual operation in bb confirmed by the maintainer before release.
+The plugin installs from Git source and builds during installation; no separate binary download is required. See this release's **After updating** notes above for changes that affect existing CLI sessions.
 
 [Setup and configuration](${repository}#connect-your-account) · [Kimi model documentation](https://www.kimi.com/code/docs/en/kimi-code/models.html)${previous ? ` · [Full changelog](${repository}/compare/v${previous}...${tag})` : ''}
 `);

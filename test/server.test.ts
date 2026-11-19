@@ -12,6 +12,7 @@ test('manual and scheduled catalog refresh invalidate the generation, target the
   await plugin(bb);
   try {
     const before = harness.inspection.registrations.providerRegistrations[0].experimental_bridgeOptions;
+    assert.equal(harness.inspection.registrations.providerRegistrations[0].maintenance?.usage, true);
     assert.equal((before?.kimiConfig as any).includeExternalModels, false);
     const result = await harness.behavior.runCli(['models', 'refresh', '--machine', 'host-target']);
     assert.equal(result.exitCode, 0, result.stderr);

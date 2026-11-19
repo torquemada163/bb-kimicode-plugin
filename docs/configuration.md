@@ -12,7 +12,7 @@
 | `model` | `auto` | Initial CLI default from the source config, or an API model ID/configured alias; individual threads use BB's model picker |
 | `maxContextSize` | `auto` | Preserve each model's native context window; a numeric value overrides subscription models only |
 
-The model catalog comes directly from `${baseUrl}/models`, authenticated with the subscription key on the execution host. The response supplies context windows, names, capabilities, and thinking controls; no fixed model list is merged into it. Usage quotas, explicit compaction, and native BB forks are not exposed. Ordinary multi-turn conversations and session restore use ACP. BB presents `accept-edits` and `full` permissions through the shared ACP adapter; neither mode is an OS sandbox. The plugin keeps Kimi's permission requests enabled and does not pass `--auto` or `--yolo`.
+The model catalog comes directly from `${baseUrl}/models`, authenticated with the subscription key on the execution host. The response supplies context windows, names, capabilities, and thinking controls; no fixed model list is merged into it. Subscription quotas are available through `/usage` and BB's provider usage display; explicit compaction and native BB forks are not exposed. Ordinary multi-turn conversations and session restore use ACP. BB presents `accept-edits` and `full` permissions through the shared ACP adapter; neither mode is an OS sandbox. The plugin keeps Kimi's permission requests enabled and does not pass `--auto` or `--yolo`.
 
 The server refreshes the provider catalog registration on startup and every 15 minutes; connected hosts fetch the new catalog when BB probes their model lists. Model listing and session requests also check the host cache age. `bb kimicode models refresh [--machine host_id]` requests an immediate refresh on the selected execution host. Without `--machine`, the command uses its current thread's host, otherwise BB's server host. Existing in-flight requests keep their selected model; later requests validate that model against the current catalog.
 
@@ -20,11 +20,37 @@ Successful responses replace the entire subscription catalog, including removal 
 
 For remote execution, install `kimi` and place the credentials file on **each execution host** at the configured paths. This version uses one set of plugin paths for all hosts.
 
+## Subscription quotas
+
+Send the plain text `/usage` alone in a Kimi Code thread. On each request the host reads `KIMI_API_KEY` from `envFile` and fetches `${baseUrl}/usages`. No model call, CLI launch, or model catalog refresh is required by the handler. BB's standard provider usage request uses the same host implementation. The plugin also registers the discoverable `provider-usage.v1.listResources` and `provider-usage.v1.getResource` RPC contract consumed by BB's Provider Usage UI. `maintenance.usage=true` alone does not advertise a source to that UI.
+
+Click the **Provider usage** chart icon in the sidebar footer, select **Kimi Code**, and choose the execution host. The standard BB panel renders quota bars and reset countdowns; its reload button requests a fresh measurement. The source is also available in **Settings → Usage limits**. Inventory reads host/provider metadata only; collecting a resource routes through `bb.sdk.system.usageLimits` to that specific host's bridge. Each host is listed independently: without a provider-issued account identity the plugin does not merge accounts or infer identity from an API key/email. The adapter stores only the last successful observation time, coalesces simultaneous reads, and honors an explicit refresh after an in-flight ordinary read. BB controls its own usage cache; `/usage` remains a direct fresh fetch.
+
+The reply shows used and remaining percentages and API-supplied reset times in UTC. Five-hour, weekly, and monthly windows appear only when returned by the API. Quotas apply to the subscription account across sessions, including when an external API model is selected; they do not describe external API billing or the current thread's context. The handler supports current ratio metadata and older quota counters without treating those units as tokens. It does not fetch account profile details or infer missing limits.
+
+Requests have a 12-second timeout, a 64 KiB response limit, and no redirects. No quota cache is used. Authentication errors and unavailable/malformed responses are shown as errors; they are not replaced with zero usage. Stop cancels an in-progress `/usage` and suppresses late output. The command is recognized as a standalone text message; ACP command-menu suggestions are unchanged.
+
+## Background processes
+
+The isolated Kimi config disables native background tasks and cron as a workaround for [Kimi ACP issue #4109](https://github.com/MoonshotAI/kimi-code/issues/4109). In CLI 2.4.0, a completed background task can start an invisible agent turn; a user message sent during that turn receives an empty `end_turn` while the CLI executes it later without delivering its updates to BB. Successful API requests can therefore coexist with missing replies. This workaround prevents that execution path; it does not add autonomous-turn delivery to ACP.
+
+The plugin disables `TaskList`, `TaskOutput`, `TaskStop`, `WaitFor`, and `CronCreate` in Kimi's tool policy. Kimi then rejects background `Bash`, background `Agent`, and background questions; ordinary commands and foreground subagents remain available. Foreground shell commands time out rather than automatically moving to the background. Cron is disabled in both the snapshot and child environment, including on session resume.
+
+Use BB terminals for processes that must keep running between messages:
+
+```sh
+bb terminal create --thread <thread-id> --title "Browser observer" -- node observer.mjs
+bb terminal output <terminal-id> --plain --tail-bytes 8192
+bb terminal close <terminal-id>
+```
+
+Read results explicitly on the next user turn; BB terminals do not promise an automatic Kimi follow-up when a process exits. Run `bb guide terminals` for the current terminal commands. After updating the plugin, stop and resume an existing Kimi thread (or start a new one) so its CLI process loads the policy. Already-running native background work is not migrated to a BB terminal. The standalone Kimi configuration is unchanged.
+
 ## Isolation and secrets
 
 The server registers only provider `kimi-code`. It does not contribute environment variables to other providers or edit BB's global provider configuration, `~/.claude`, or Codex settings.
 
-The plugin sends only the credentials **file path** to the host. Its isolated bridge process reads that file as dotenv data (never `source`/`eval`), uses it for the subscription catalog request, and passes `BB_KIMI_CODE_API_KEY` directly to its Kimi child, referenced with `api_key_env` in the isolated config. The actual key is absent from server-side settings, persisted provider options, and `provider.env-resolved` contributions. Only `KIMI_API_KEY` is read; other dotenv entries are ignored. Missing/empty credentials fail with a bounded diagnostic. Catalog requests do not follow redirects. The private cache is scoped by endpoint and a one-way key fingerprint, contains only normalized model metadata and timestamps, and is written atomically with mode `600`. Cache data from a different key or endpoint is never reused.
+The plugin sends only the credentials **file path** to the host. Its isolated bridge process reads that file as dotenv data (never `source`/`eval`), uses it for subscription catalog and quota requests, and passes `BB_KIMI_CODE_API_KEY` directly to its Kimi child, referenced with `api_key_env` in the isolated config. The actual key is absent from server-side settings, persisted provider options, and `provider.env-resolved` contributions. Only `KIMI_API_KEY` is read; other dotenv entries are ignored. Missing/empty credentials fail with a bounded diagnostic. Catalog and quota requests do not follow redirects. The private cache is scoped by endpoint and a one-way key fingerprint, contains only normalized model metadata and timestamps, and is written atomically with mode `600`. Cache data from a different key or endpoint is never reused.
 
 Kimi uses a plugin-owned `kimi-home` under the host bridge's data directory, keeping CLI config, sessions, and logs apart from an existing standalone Kimi installation. Subscription models are rebuilt from the live or cached catalog; their credentials use the `.env` API-key reference. With `includeExternalModels=true`, only external provider/model tables are imported, not standalone MCP servers, tools, or other settings. External providers retain their own credentials in a host-local snapshot with mode `600`, inside a directory created with mode `700`. The original source config is never modified. Import API-key providers whose credentials are self-contained in the config or explicitly supplied through their `api_key_env`; external OAuth credential stores are not copied. Rotating the key requires replacing it in the credentials file and starting/resuming a CLI session. As with other CLI agents, the child process receives the key in its environment; its own diagnostics and tools remain trusted code.
 

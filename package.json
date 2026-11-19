@@ -1,6 +1,6 @@
 {
   "name": "bb-plugin-kimicode",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "type": "module",
   "engines": {
     "bb": ">=0.46.1",
@@ -8,7 +8,7 @@
   },
   "bb": {
     "name": "Kimi Code",
-    "description": "Run Kimi Code as an independent ACP provider without changing Claude Code or Codex.",
+    "description": "Kimi Code in bb with subscription models, thinking controls, and live quota limits.",
     "branding": {
       "icon": "./assets/kimi.svg"
     },
@@ -21,7 +21,8 @@
   "dependencies": {
     "@get-bb/plugin-sdk": "0.6.49",
     "dotenv": "^17.2.3",
-    "smol-toml": "^1.9.1"
+    "smol-toml": "^1.9.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
@@ -44,6 +45,8 @@
     "LICENSE",
     "scripts/smoke.ts",
     "scripts/smoke-errors.ts",
+    "scripts/smoke-background.ts",
+    "scripts/smoke-usage.ts",
     "assets",
     "PLUGIN_OVERVIEW.md",
     "CHANGELOG.md",
@@ -56,6 +59,8 @@
     "test": "tsx --test test/*.test.ts && tsx test/conformance.ts && tsx test/host-catalog.ts",
     "smoke": "tsx scripts/smoke.ts",
     "smoke:errors": "tsx scripts/smoke-errors.ts",
+    "smoke:background": "tsx scripts/smoke-background.ts",
+    "smoke:usage": "tsx scripts/smoke-usage.ts",
     "check:install": "node scripts/check-git-install.mjs",
     "check:package": "node scripts/check-package.mjs"
   },

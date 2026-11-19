@@ -1,12 +1,13 @@
 # Kimi Code for bb
 
 [![CI](https://github.com/torquemada163/bb-kimicode-plugin/actions/workflows/check.yml/badge.svg?branch=main)](https://github.com/torquemada163/bb-kimicode-plugin/actions/workflows/check.yml)
+[![Release](https://img.shields.io/github/v/release/torquemada163/bb-kimicode-plugin?color=2f9e75)](https://github.com/torquemada163/bb-kimicode-plugin/releases/latest)
 [![bb](https://img.shields.io/badge/bb-0.46.1%2B-6366f1)](https://getbb.app)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 Run **Kimi Code** alongside your existing coding agents in [bb](https://getbb.app). This plugin adds its own provider, model picker, and thinking controls using the official Kimi Code CLI over ACP. Claude Code and Codex keep their existing connections and credentials.
 
-[Install](#install) · [Configuration](docs/configuration.md) · [Development](docs/development.md) · [Changelog](CHANGELOG.md)
+[Install](#install) · [Subscription limits](#subscription-usage) · [Configuration](docs/configuration.md) · [Development](docs/development.md) · [Changelog](CHANGELOG.md)
 
 ## What you get
 
@@ -15,6 +16,7 @@ Run **Kimi Code** alongside your existing coding agents in [bb](https://getbb.ap
 - Low / High / Max thinking levels on models that support them.
 - Optional separately configured API providers, with explicit API labels and separate billing.
 - Multi-turn conversations and session restore through ACP.
+- Quota bars and reset countdowns in **Provider usage → Kimi Code**, plus `/usage` for a text report.
 - An isolated CLI home, with host-local credentials and an unchanged standalone Kimi config.
 
 ## Install
@@ -107,11 +109,18 @@ These entries carry an **API (provider-id)** label and retain their own credenti
 
 [All settings, credential handling, and troubleshooting →](docs/configuration.md)
 
+## Subscription usage
+
+Send `/usage` as a separate message in a Kimi Code thread. The plugin reads fresh account limits from `${baseUrl}/usages` on the execution host using the subscription key in `envFile`. It shows used and remaining percentages, with reset times explicitly in UTC. The API determines which windows apply: five hours, weekly, or monthly. These are shared subscription allowances, not the token count of the current conversation or separately billed API usage.
+
+The command makes no model request. Open the **Provider usage** chart icon at the bottom of BB's sidebar and select **Kimi Code** to see quota bars and reset countdowns, alongside other providers. The same source appears in **Settings → Usage limits**. Choose the execution machine in that panel; use its reload button for a fresh reading. If credentials, connectivity, or the API response fail, the plugin reports an error instead of showing an invented zero balance. `/usage` must be sent as plain text by itself; it is not advertised in ACP's command menu.
+
 ## Scope and limitations
 
 - The plugin registers only `kimi-code`; other bb providers are not reconfigured.
-- The subscription key is read on the execution host, used there to fetch the subscription catalog, and passed directly to the Kimi child process. The source config is never modified. See [isolation and secrets](docs/configuration.md#isolation-and-secrets).
-- Usage quota reporting, manual compaction, and native bb forks are not exposed yet.
+- The subscription key is read on the execution host, used there to fetch the subscription catalog and quotas, and passed directly to the Kimi child process. The source config is never modified. See [isolation and secrets](docs/configuration.md#isolation-and-secrets).
+- Manual compaction and native bb forks are not exposed yet.
+- Native Kimi background tasks and cron are disabled to avoid lost replies in its ACP interface. Use **BB terminals** for browsers, dev servers, and observers that must keep running; ordinary commands and foreground subagents remain available. See [background processes](docs/configuration.md#background-processes).
 - Permissions use bb's shared ACP adapter. The plugin does not pass `--auto` or `--yolo`; permission modes are not an OS sandbox.
 - One set of executable and credentials paths applies across hosts. Each execution host needs the corresponding files.
 

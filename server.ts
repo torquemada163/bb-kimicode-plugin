@@ -4,6 +4,7 @@ import timers from 'node:timers/promises';
 import { CATALOG_TTL_MS } from './src/subscription-catalog.js';
 import { REASONING_LEVELS } from './src/reasoning.js';
 import { bridgeOptions, DEFAULT_BASE_URL, PROVIDER_ID, readSettings } from './src/config.js';
+import { registerUsageSource } from './src/usage-source.js';
 
 export default async function plugin(bb: BbPluginApi) {
   const settings = bb.settings.define({
@@ -32,7 +33,7 @@ export default async function plugin(bb: BbPluginApi) {
       },
       experimental_visibility: 'always',
       experimental_bridgeOptions: bridgeOptions(config, refreshAfter),
-      maintenance: { health: true, usage: false, installation: false },
+      maintenance: { health: true, usage: true, installation: false },
       capabilities: {
         supportsServiceTier: false,
         supportsNativeUserQuestion: false,
@@ -55,6 +56,7 @@ export default async function plugin(bb: BbPluginApi) {
     registration = bb.providers.register(declaration);
   }
   register(await settings.get());
+  registerUsageSource(bb);
   settings.onChange((next) => {
     try { refreshAfter = Date.now(); register(next); }
     catch { bb.log.error('Invalid Kimi Code settings; the previous provider registration is retained. Check envFile, baseUrl, and maxContextSize.'); }
