@@ -48,6 +48,9 @@ max_context_size = 1048576
     assert.deepEqual(snapshot.models['kimi-code/k3'].support_efforts, ['low', 'high', 'max']);
     assert.equal(snapshot.models['kimi-code/k3'].max_context_size, 1048576);
     assert.equal(snapshot.default_model, 'kimi-code/k3');
+    assert.deepEqual(snapshot.tools.disabled, ['TaskList', 'TaskOutput', 'TaskStop', 'WaitFor', 'CronCreate']);
+    assert.equal(snapshot.task.bash_auto_background_on_timeout, false);
+    assert.equal(snapshot.cron.disabled, true);
     assert.equal(snapshot.providers['managed:kimi-code'].api_key, undefined);
     assert.equal(snapshot.providers['managed:kimi-code'].oauth, undefined);
     assert.equal(snapshot.providers['managed:kimi-code'].api_key_env, 'BB_KIMI_CODE_API_KEY');

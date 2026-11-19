@@ -49,6 +49,13 @@ export function writeHostCatalog(config: KimiSettings, dataDir: string, subscrip
   const labeledModels = Object.fromEntries(Object.entries(models).map(([alias, value]) => [alias,
     alias.startsWith('kimi-code/') ? { ...value, display_name: `${value.display_name} · подписка Kimi Code` } : value]));
   const snapshot = { default_model: defaultModel, providers, models: labeledModels,
+    // Kimi ACP drops autonomous task/cron turns and prematurely settles a prompt
+    // queued behind one (MoonshotAI/kimi-code#4109). Disabling native task tools
+    // also makes Bash/Agent/AskUserQuestion reject background execution, while
+    // retaining their foreground modes. Long-lived processes use BB terminals.
+    tools: { disabled: ['TaskList', 'TaskOutput', 'TaskStop', 'WaitFor', 'CronCreate'] },
+    task: { bash_auto_background_on_timeout: false },
+    cron: { disabled: true },
     loop_control: { max_attempts_per_step: 1, compaction_max_attempts: 1 } };
   const home = join(dataDir, 'kimi-home');
   mkdirSync(home, { recursive: true, mode: 0o700 });

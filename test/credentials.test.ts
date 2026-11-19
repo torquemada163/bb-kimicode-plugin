@@ -22,6 +22,7 @@ test('only host options contain the key; dotenv is parsed as data, and unrelated
     assert.equal(env.KIMI_MODEL_NAME, '');
     assert.equal(env.KIMI_CODE_HOME, join(dir, 'kimi-home'));
     assert.equal(env.KIMI_LOOP_MAX_ATTEMPTS_PER_STEP, '1');
+    assert.equal(env.KIMI_DISABLE_CRON, '1');
     assert.equal(env.BB_KIMI_EXECUTABLE, 'kimi');
     assert.equal(prepared.acpLaunchSpec.command, process.execPath);
     const healthSpec = (await prepareHostOptions(options, dir, false)).acpLaunchSpec;
